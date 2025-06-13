@@ -1,0 +1,21 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+  filelog:
+    include:
+      - /logs/*.log
+
+exporters:
+  otlp:
+    endpoint: "vector:4317"
+
+service:
+  pipelines:
+    logs:
+      receivers: [filelog]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      exporters: [otlp]
