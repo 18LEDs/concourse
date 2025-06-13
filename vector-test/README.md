@@ -40,6 +40,26 @@ ansible-playbook -i ansible/inventory ansible/deploy.yml
 Docker must be installed on the target host(s). The playbook will copy the Vector configuration and run the container.
 
 
+## Local Docker Compose
+
+For local proof-of-concept testing you can run the stack with Docker Compose.
+The provided `docker-compose.yml` file starts Vector along with a Datadog Agent,
+Filebeat, an OpenTelemetry Collector and a small log generator.
+
+1. Install Docker and Docker Compose.
+2. Optionally set `DD_API_KEY` and `SPLUNK_TOKEN` in your environment.
+3. Launch the stack:
+
+```bash
+docker-compose up
+```
+
+Logs written by the `logger` container are picked up by Filebeat and the OTEL
+collector, then forwarded to Vector. The Datadog Agent also ships its own logs
+to the Vector service. Review `vector.yaml` and the other config files in this
+directory to adjust sources or sinks.
+
+
 ## Kubernetes Deployment with Datadog Agents
 
 This example assumes the Datadog Agent is already deployed as a Helm chart in multiple Kubernetes clusters. To forward container logs to the centralized Vector instance you can override the following values in the chart:
