@@ -1,0 +1,2 @@
+[vector_servers]
+vector-host ansible_host=PLACEHOLDER_IP
