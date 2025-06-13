@@ -72,6 +72,7 @@ graph TD
     OP --> D[Datadog]
     V --> ES[Elasticsearch]
     V --> SP[Splunk]
+    DD --> D
 ```
 
 Logs are forwarded from the Datadog Agents through the Vector VIP. Vector processes the events with VRL and then ships them to your Observability Pipelines endpoint before ultimately sending them to Datadog, as well as to any additional sinks such as Elasticsearch or Splunk.
