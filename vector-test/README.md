@@ -19,7 +19,7 @@ Placeholders are used for tokens and endpoint URLs. Update them for your environ
 vector-test/
   ansible/
     deploy.yml            # Playbook to deploy Vector
-    inventory             # Inventory file with hosts
+    hosts.ini             # Inventory file with hosts
     roles/
       vector/
         tasks/main.yml    # Tasks to run Vector container
@@ -29,12 +29,12 @@ vector-test/
 
 ## Quick Start
 
-1. Edit `ansible/inventory` and add the hosts where Vector should run.
+1. Edit `ansible/hosts.ini` and add the hosts where Vector should run.
 2. Edit `ansible/roles/vector/templates/vector.yaml.j2` to customize sources, transforms, and sinks.
 3. Run the playbook:
 
 ```bash
-ansible-playbook -i ansible/inventory ansible/deploy.yml
+ansible-playbook -i ansible/hosts.ini ansible/deploy.yml
 ```
 
 Docker must be installed on the target host(s). The playbook will copy the Vector configuration and run the container.
