@@ -1,0 +1,8 @@
+filebeat.inputs:
+  - type: log
+    paths:
+      - /logs/*.log
+
+output.syslog:
+  protocol.tcp:
+    host: "vector:10514"
