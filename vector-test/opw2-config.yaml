@@ -1,0 +1,9 @@
+# Observability Pipeline worker 2 configuration
+# Replace placeholders with actual pipeline definition
+sources:
+  http_ingest:
+    type: http
+    address: 0.0.0.0:8081
+sinks:
+  discard:
+    type: blackhole
