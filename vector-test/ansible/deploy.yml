@@ -1,0 +1,8 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    vector_config_path: /etc/vector/vector.toml
+    vector_version: "0.34.1"  # adjust as needed
+  roles:
+    - vector

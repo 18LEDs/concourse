@@ -1,0 +1,30 @@
+---
+- name: Ensure Vector config directory exists
+  file:
+    path: "/etc/vector"
+    state: directory
+    mode: '0755'
+
+- name: Deploy vector configuration
+  template:
+    src: vector.toml.j2
+    dest: "{{ vector_config_path }}"
+    mode: '0644'
+
+- name: Run Vector container
+  community.docker.docker_container:
+    name: vector
+    image: "timberio/vector:{{ vector_version }}-alpine"
+    state: started
+    restart_policy: unless-stopped
+    volumes:
+      - "{{ vector_config_path }}:/etc/vector/vector.toml:ro"
+    ports:
+      - "4317:4317"    # OTEL
+      - "10514:10514"  # Filebeat/Splunk syslog
+      - "9001:9001"    # Datadog logs
+      - "8125:8125/udp" # StatsD metrics
+    env:
+      DD_API_KEY: "{{ lookup('env','DD_API_KEY') | default('DD_API_KEY_PLACEHOLDER') }}"
+      SPLUNK_TOKEN: "{{ lookup('env','SPLUNK_TOKEN') | default('SPLUNK_TOKEN_PLACEHOLDER') }}"
+

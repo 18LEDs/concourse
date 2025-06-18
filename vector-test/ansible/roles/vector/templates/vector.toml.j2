@@ -1,0 +1,80 @@
+# Vector configuration - centralized aggregator
+# Update endpoints and tokens as needed
+
+data_dir = "/var/lib/vector"
+
+[sources.otel]
+  type = "otlp"
+  address = "0.0.0.0:4317"
+
+[sources.filebeat_logs]
+  type = "syslog"
+  address = "0.0.0.0:10514"
+
+[sources.datadog_logs]
+  type = "vector"
+  address = "0.0.0.0:9001"
+
+[sources.datadog_metrics]
+  type = "statsd"
+  address = "0.0.0.0:8125"
+
+[sources.splunk_forwarder]
+  type = "syslog"
+  address = "0.0.0.0:1514"
+
+[transforms.add_tags]
+  type = "remap"
+  inputs = ["otel", "filebeat_logs", "datadog_logs", "datadog_metrics", "splunk_forwarder"]
+  source = '''
+  .tags.service = get(.service) ?? "unknown"
+  '''
+
+[transforms.filter_errors]
+  type = "filter"
+  inputs = ["add_tags"]
+  condition = '.log_level == "error"'
+
+[transforms.sample_logs]
+  type = "sample"
+  inputs = ["filter_errors"]
+  rate = 0.1
+
+[transforms.route_events]
+  type = "route"
+  inputs = ["sample_logs"]
+
+  [transforms.route_events.route]
+    op_worker_1 = '.service == "serviceA"'
+    op_worker_2 = '.service == "serviceB"'
+
+[sinks.op_worker_1]
+  type = "http"
+  inputs = ["route_events.op_worker_1"]
+  uri = "http://op-worker-1:8080/v1/input"
+
+[sinks.op_worker_2]
+  type = "http"
+  inputs = ["route_events.op_worker_2"]
+  uri = "http://op-worker-2:8081/v1/input"
+
+[sinks.to_datadog]
+  type = "datadog_logs"
+  inputs = ["route_events.other"]
+  default_api_key = "${DD_API_KEY}"
+  endpoint = "https://http-intake.logs.datadoghq.com/v1/input"
+
+[sinks.to_elasticsearch]
+  type = "elasticsearch"
+  inputs = ["route_events.other"]
+  endpoints = ["https://elasticsearch.example.com"]
+  index = "vector-%Y-%m-%d"
+
+[sinks.to_splunk]
+  type = "splunk_hec"
+  inputs = ["route_events.other"]
+  endpoint = "https://splunk.example.com:8088"
+  token = "${SPLUNK_TOKEN}"
+
+  [sinks.to_splunk.encoding]
+    codec = "json"
