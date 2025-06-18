@@ -46,22 +46,41 @@ transforms:
     inputs: [filter_errors]
     rate: 0.1
 
+  route_events:
+    type: route
+    inputs: [sample_logs]
+    route:
+      op_worker_1: '.service == "serviceA"'
+      op_worker_2: '.service == "serviceB"'
+
 sinks:
+  # Forward specific services to Observability Pipeline workers
+  op_worker_1:
+    type: http
+    inputs: ["route_events.op_worker_1"]
+    uri: "http://op-worker-1:8080/v1/input"
+
+  op_worker_2:
+    type: http
+    inputs: ["route_events.op_worker_2"]
+    uri: "http://op-worker-2:8081/v1/input"
+
+  # Default path sends to multiple sinks
   to_datadog:
     type: datadog_logs
-    inputs: [sample_logs]
+    inputs: ["route_events.other"]
     default_api_key: "${DD_API_KEY}"
     endpoint: "https://http-intake.logs.datadoghq.com/v1/input"
 
   to_elasticsearch:
     type: elasticsearch
-    inputs: [sample_logs]
+    inputs: ["route_events.other"]
     endpoints: ["https://elasticsearch.example.com"]
     index: "vector-%Y-%m-%d"
 
   to_splunk:
     type: splunk_hec
-    inputs: [sample_logs]
+    inputs: ["route_events.other"]
     endpoint: "https://splunk.example.com:8088"
     token: "${SPLUNK_TOKEN}"
     encoding:
