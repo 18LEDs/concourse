@@ -16,7 +16,6 @@ services:
       DD_API_KEY: ${DD_API_KEY:-DD_API_KEY_PLACEHOLDER}
       SPLUNK_TOKEN: ${SPLUNK_TOKEN:-SPLUNK_TOKEN_PLACEHOLDER}
 
-
   datadog-agent:
     image: datadog/agent:latest
     environment:

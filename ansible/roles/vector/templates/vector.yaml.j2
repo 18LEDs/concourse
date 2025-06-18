@@ -1,0 +1,68 @@
+# Vector configuration - centralized aggregator
+# Update endpoints and tokens as needed
+
+data_dir: /var/lib/vector
+
+sources:
+  otel:
+    type: otlp
+    address: 0.0.0.0:4317
+
+  filebeat_logs:
+    type: syslog
+    address: 0.0.0.0:10514
+
+  datadog_logs:
+    type: vector
+    address: 0.0.0.0:9001
+
+  datadog_metrics:
+    type: statsd
+    address: 0.0.0.0:8125
+
+  splunk_forwarder:
+    type: syslog
+    address: 0.0.0.0:1514
+
+transforms:
+  add_tags:
+    type: remap
+    inputs:
+      - otel
+      - filebeat_logs
+      - datadog_logs
+      - datadog_metrics
+      - splunk_forwarder
+    source: |
+      .tags.service = get(.service) ?? "unknown"
+
+  filter_errors:
+    type: filter
+    inputs: [add_tags]
+    condition: '.log_level == "error"'
+
+  sample_logs:
+    type: sample
+    inputs: [filter_errors]
+    rate: 0.1
+
+sinks:
+  to_datadog:
+    type: datadog_logs
+    inputs: [sample_logs]
+    default_api_key: "${DD_API_KEY}"
+    endpoint: "https://http-intake.logs.datadoghq.com/v1/input"
+
+  to_elasticsearch:
+    type: elasticsearch
+    inputs: [sample_logs]
+    endpoints: ["https://elasticsearch.example.com"]
+    index: "vector-%Y-%m-%d"
+
+  to_splunk:
+    type: splunk_hec
+    inputs: [sample_logs]
+    endpoint: "https://splunk.example.com:8088"
+    token: "${SPLUNK_TOKEN}"
+    encoding:
+      codec: json

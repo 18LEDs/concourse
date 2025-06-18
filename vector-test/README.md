@@ -11,6 +11,7 @@ Vector will run in a container and accept logs, metrics, and traces from multipl
 
 Logs, metrics, and traces can be processed with VRL transforms and then routed to Datadog Observability Pipelines or sent directly to other sinks such as Datadog, Elasticsearch, and Splunk. The example configuration chains a `remap`, `filter`, `sample`, and `route` transform to demonstrate steering events to different destinations. The Observability Pipeline workers themselves are deployed separately; Vector simply forwards events to them via HTTP.
 
+
 Placeholders are used for tokens and endpoint URLs. Update them for your environment before deployment.
 
 ## Directory Structure
@@ -57,7 +58,6 @@ docker run -d --name vector \
 ```
 
 The command mounts the configuration from this repository and exposes the ports used by the sample config. Adjust tokens and endpoints as needed.
-
 
 
 ## Local Docker Compose
@@ -156,7 +156,6 @@ spec:
 ```
 
 Agents can then send logs to the service VIP while Vector forwards them on to Observability Pipelines or other sinks.
-
 
 ## Architecture
 
