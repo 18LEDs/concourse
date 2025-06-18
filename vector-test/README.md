@@ -43,6 +43,22 @@ ansible-playbook -i ansible/hosts.ini ansible/deploy.yml
 
 Docker must be installed on the target host(s). The playbook will copy the Vector configuration and run the container.
 
+## Standalone Docker
+
+If you prefer to run Vector manually on a single host you can start the container directly with Docker:
+
+```bash
+docker run -d --name vector \
+  -v $(pwd)/vector.yaml:/etc/vector/vector.yaml:ro \
+  -e DD_API_KEY=YOUR_DD_API_KEY \
+  -e SPLUNK_TOKEN=YOUR_SPLUNK_TOKEN \
+  -p 4317:4317 -p 10514:10514 -p 9001:9001 -p 8125:8125 -p 1514:1514 \
+  timberio/vector:0.36.X-alpine
+```
+
+The command mounts the configuration from this repository and exposes the ports used by the sample config. Adjust tokens and endpoints as needed.
+
+
 
 ## Local Docker Compose
 
@@ -83,6 +99,64 @@ This example assumes the Datadog Agent is already deployed as a Helm chart in mu
 ```
 
 Replace `VECTOR_VIP` with the address of the central ingest VIP in front of Vector. Metrics and traces can also be pointed at this VIP or continue to use the default Datadog endpoints depending on your requirements. Observability Pipeline workers should also be reachable from Vector so that log routing works.
+
+### Running Vector in Kubernetes
+
+Vector can also run as a Deployment inside your cluster. First create a ConfigMap with the `vector.yaml` configuration and then deploy a Deployment and Service:
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-config
+data:
+  vector.yaml: |
+    # contents of vector.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vector
+  template:
+    metadata:
+      labels:
+        app: vector
+    spec:
+      containers:
+      - name: vector
+        image: timberio/vector:0.36.X-alpine
+        args: ["--config", "/etc/vector/vector.yaml"]
+        ports:
+        - containerPort: 9001
+        - containerPort: 8125
+        volumeMounts:
+        - name: config
+          mountPath: /etc/vector
+      volumes:
+      - name: config
+        configMap:
+          name: vector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vector
+spec:
+  type: LoadBalancer
+  selector:
+    app: vector
+  ports:
+  - port: 9001
+    targetPort: 9001
+```
+
+Agents can then send logs to the service VIP while Vector forwards them on to Observability Pipelines or other sinks.
+
 
 ## Architecture
 
