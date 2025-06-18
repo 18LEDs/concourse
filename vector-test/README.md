@@ -9,7 +9,7 @@ Vector will run in a container and accept logs, metrics, and traces from multipl
 - **OpenTelemetry (OTEL)** collectors via the `otlp` source.
 - **Filebeat** via `syslog`.
 
-Logs, metrics, and traces can be processed with VRL transforms and then routed to Datadog Observability Pipeline workers or sent directly to other sinks such as Datadog, Elasticsearch, and Splunk. The example configuration chains a `remap`, `filter`, `sample`, and `route` transform to demonstrate steering events to different destinations.
+Logs, metrics, and traces can be processed with VRL transforms and then routed to Datadog Observability Pipelines or sent directly to other sinks such as Datadog, Elasticsearch, and Splunk. The example configuration chains a `remap`, `filter`, `sample`, and `route` transform to demonstrate steering events to different destinations. The Observability Pipeline workers themselves are deployed separately; Vector simply forwards events to them via HTTP.
 
 Placeholders are used for tokens and endpoint URLs. Update them for your environment before deployment.
 
@@ -25,8 +25,6 @@ vector-test/
         tasks/main.yml    # Tasks to run Vector container
         templates/
           vector.yaml.j2  # Vector configuration template
-  opw1-config.yaml        # Config for Observability Pipeline worker 1
-  opw2-config.yaml        # Config for Observability Pipeline worker 2
   docker-compose.yml
   filebeat.yml
   otel-collector-config.yaml
@@ -37,8 +35,7 @@ vector-test/
 
 1. Edit `ansible/hosts.ini` and add the hosts where Vector should run.
 2. Edit `ansible/roles/vector/templates/vector.yaml.j2` to customize sources, transforms, and sinks.
-3. Adjust the `op_workers` list in `ansible/deploy.yml` if you need a different number of Observability Pipeline workers or ports.
-4. Run the playbook:
+3. Run the playbook:
 
 ```bash
 ansible-playbook -i ansible/hosts.ini ansible/deploy.yml
@@ -50,11 +47,12 @@ Docker must be installed on the target host(s). The playbook will copy the Vecto
 ## Local Docker Compose
 
 For local proof-of-concept testing you can run the stack with Docker Compose.
-The provided `docker-compose.yml` file starts Vector, two Observability Pipeline workers,
-a Datadog Agent, Filebeat, an OpenTelemetry Collector and a small log generator.
+The provided `docker-compose.yml` file starts Vector along with a Datadog Agent,
+Filebeat, an OpenTelemetry Collector and a small log generator. Observability
+Pipeline workers are assumed to run elsewhere.
 
 1. Install Docker and Docker Compose.
-2. Optionally set `DD_API_KEY`, `SPLUNK_TOKEN` and `DD_OP_WORKER_TOKEN` in your environment.
+2. Optionally set `DD_API_KEY` and `SPLUNK_TOKEN` in your environment.
 3. Launch the stack:
 
 ```bash
@@ -84,7 +82,7 @@ This example assumes the Datadog Agent is already deployed as a Helm chart in mu
        value: "http://VECTOR_VIP:9001"
 ```
 
-Replace `VECTOR_VIP` with the address of the central ingest VIP in front of the Vector and Observability Pipeline workers. Metrics and traces can also be pointed at this VIP or continue to use the default Datadog endpoints depending on your requirements.
+Replace `VECTOR_VIP` with the address of the central ingest VIP in front of Vector. Metrics and traces can also be pointed at this VIP or continue to use the default Datadog endpoints depending on your requirements. Observability Pipeline workers should also be reachable from Vector so that log routing works.
 
 ## Architecture
 
@@ -105,4 +103,4 @@ graph TD
     OP2 --> DD
 ```
 
-All logs, metrics and traces are sent from the Datadog Agents to the central VIP. Vector can either forward events directly to the Observability Pipeline workers or send them straight to other sinks such as Datadog, Elasticsearch or Splunk depending on VRL routing rules.
+All logs, metrics and traces are sent from the Datadog Agents to the central VIP. Vector can either forward events to the externally managed Observability Pipeline workers or send them straight to other sinks such as Datadog, Elasticsearch or Splunk depending on VRL routing rules.

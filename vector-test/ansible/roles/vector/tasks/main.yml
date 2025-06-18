@@ -11,21 +11,6 @@
     dest: "{{ vector_config_path }}"
     mode: '0644'
 
-- name: Ensure OP config directory exists
-  file:
-    path: "/etc/observability-pipelines"
-    state: directory
-    mode: '0755'
-
-- name: Copy OP worker configs
-  copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    mode: '0644'
-  loop:
-    - { src: 'opw1-config.yaml', dest: '/etc/observability-pipelines/opw1.yaml' }
-    - { src: 'opw2-config.yaml', dest: '/etc/observability-pipelines/opw2.yaml' }
-
 - name: Run Vector container
   community.docker.docker_container:
     name: vector
@@ -43,17 +28,3 @@
       DD_API_KEY: "{{ lookup('env','DD_API_KEY') | default('DD_API_KEY_PLACEHOLDER') }}"
       SPLUNK_TOKEN: "{{ lookup('env','SPLUNK_TOKEN') | default('SPLUNK_TOKEN_PLACEHOLDER') }}"
 
-- name: Run Observability Pipeline workers
-  community.docker.docker_container:
-    name: "{{ item.name }}"
-    image: datadog/observability-pipelines-worker:latest
-    state: started
-    restart_policy: unless-stopped
-    volumes:
-      - "{{ item.config }}:/etc/observability-pipelines-worker/config.yaml:ro"
-    ports:
-      - "{{ item.port }}:{{ item.port }}"
-    env:
-      DD_OP_WORKER_TOKEN: "{{ lookup('env','DD_OP_WORKER_TOKEN') | default('TOKEN_PLACEHOLDER') }}"
-  loop: "{{ op_workers }}"
-  when: op_workers is defined

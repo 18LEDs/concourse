@@ -4,12 +4,5 @@
   vars:
     vector_config_path: /etc/vector/vector.yaml
     vector_version: "0.34.1"  # adjust as needed
-    op_workers:
-      - name: op-worker-1
-        port: 8080
-        config: /etc/observability-pipelines/opw1.yaml
-      - name: op-worker-2
-        port: 8081
-        config: /etc/observability-pipelines/opw2.yaml
   roles:
     - vector
